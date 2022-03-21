@@ -1,31 +1,25 @@
 - name: Extend the logical volume to take all remaining space of the PVs and resize the underlying filesystem
   hosts: "*"
-  become: yes
+  become: true
   tasks:
-      ## Install Ansible Galaxy community collection first. "ansible-galaxy collection install community.general"
-      ## https://galaxy.ansible.com/community/general
-      community.general.lvol:
+    ## Install Ansible Galaxy community collection first. "ansible-galaxy collection install community.general"
+    ## https://galaxy.ansible.com/community/general
+    - community.general.lvol:
         vg: ubuntu-vg
         lv: ubuntu-lv
         size: +100%FREE
         resizefs: true
 
-- name: Set timezone and configure timesyncd
-  hosts: "*"
-  become: yes
-  tasks:
-  - name: set timezone
-    shell: timedatectl set-timezone Pacific/Auckland
+    ## Consider using the community.general.timezone module instead of shell
+    ## See: https://docs.ansible.com/ansible/latest/collections/community/general/timezone_module.html
+    - name: set timezone
+      shell: timedatectl set-timezone Pacific/Auckland
 
-  - name: Make sure timesyncd is stopped
-    systemd:
-      name: systemd-timesyncd.service
-      state: stopped
-
-  - name: Make sure timesyncd is started
-    systemd:
-      name: systemd-timesyncd.service
-      state: started
+    ## Check https://docs.ansible.com/ansible/latest/collections/ansible/builtin/systemd_module.html#parameter-state
+    - name: Make sure timesyncd is stopped
+      systemd:
+        name: systemd-timesyncd.service
+        state: restarted
 
 - name: install latest zsh on all hosts
   hosts: "*"
@@ -35,7 +29,7 @@
         name: zsh
         state: present
         update_cache: true
-      become: true    
+      become: true
 - name: Update apps
   hosts: "*"
   become: yes
@@ -44,14 +38,14 @@
       apt:
         update_cache: yes
         upgrade: 'yes'
-        
+
 - name: Install oh-my-zsh
   hosts: "*"
   roles:
     - role: gantsign.oh-my-zsh
       users:
         - username: master ## Username of the account you'd like to install Oh-My-Zsh to. Use "ansible-galaxy install gantsign.oh-my-zsh" first.
-                         ## https://galaxy.ansible.com/gantsign/oh-my-zsh  
+                         ## https://galaxy.ansible.com/gantsign/oh-my-zsh
 - hosts: "*"
   become: yes
   tasks:
