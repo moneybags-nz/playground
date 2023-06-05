@@ -1,54 +1,73 @@
-- name: Extend the logical volume to take all remaining space of the PVs and resize the underlying filesystem
+---
+- name: Update and configure Ubuntu server
   hosts: "*"
   become: true
+
   tasks:
-    ## Install Ansible Galaxy community collection first. "ansible-galaxy collection install community.general"
-    ## https://galaxy.ansible.com/community/general
-    - community.general.lvol:
+    - name: Update apt cache and packages
+      apt:
+        update_cache: yes
+        upgrade: yes
+
+    - name: Allow unattended upgrades
+      apt:
+        name: unattended-upgrades
+        state: present
+
+    - name: Extend logical volume
+      lvol:
         vg: ubuntu-vg
         lv: ubuntu-lv
         size: +100%FREE
         resizefs: true
 
-    ## Consider using the community.general.timezone module instead of shell
-    ## See: https://docs.ansible.com/ansible/latest/collections/community/general/timezone_module.html
-    - name: set timezone
-      shell: timedatectl set-timezone Pacific/Auckland
+    - name: Change hostname
+      hostname:
+        name: <hostname>
 
-    ## Check https://docs.ansible.com/ansible/latest/collections/ansible/builtin/systemd_module.html#parameter-state
-    - name: Make sure timesyncd is stopped
-      systemd:
-        name: systemd-timesyncd.service
-        state: restarted
+    - name: Update /etc/hosts file
+      lineinfile:
+        path: /etc/hosts
+        line: "{{ ansible_default_ipv4.address }} <hostname>"
 
-- name: install latest zsh on all hosts
-  hosts: "*"
-  tasks:
-    - name: install zsh
+    - name: Set timezone to Pacific/Auckland
+      timezone:
+        name: Pacific/Auckland
+
+    - name: Install open-vm-tools
       apt:
-        name: zsh
+        name: open-vm-tools
         state: present
-        update_cache: true
-      become: true
-- name: Update apps
-  hosts: "*"
-  become: yes
-  tasks:
-    - name: apt
-      apt:
-        update_cache: yes
-        upgrade: 'yes'
 
-- name: Install oh-my-zsh
-  hosts: "*"
-  roles:
-    - role: gantsign.oh-my-zsh
-      users:
-        - username: master ## Username of the account you'd like to install Oh-My-Zsh to. Use "ansible-galaxy install gantsign.oh-my-zsh" first.
-                         ## https://galaxy.ansible.com/gantsign/oh-my-zsh
-- hosts: "*"
-  become: yes
-  tasks:
-    - name: Reboot a slow machine that might have lots of updates to apply
-      reboot:
-        reboot_timeout: 3600
+    - name: Configure UFW
+      blockinfile:
+        path: /etc/default/ufw
+        block: |
+          IPV6=no
+
+    - name: Enable UFW
+      ufw:
+        state: enabled
+    
+    - name: Disable UFW
+      ufw:
+        state: disabled
+
+    - name: Deny incoming connections by default
+      ufw:
+        rule: deny
+        direction: in
+
+    - name: Allow outgoing connections by default
+      ufw:
+        rule: allow
+        direction: out
+
+    - name: Allow SSH connections
+      ufw:
+        rule: allow
+        port: ssh
+
+    - name: Enable UFW
+      ufw:
+        state: enabled
