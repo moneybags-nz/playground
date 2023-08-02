@@ -1,6 +1,6 @@
 ---
 - name: Update and configure Ubuntu server
-  hosts: "*"
+  hosts: servers
   become: true
 
   tasks:
@@ -71,3 +71,15 @@
     - name: Enable UFW
       ufw:
         state: enabled
+---
+- name: Update DNS A records on Synology NAS
+  hosts: nas  # Use the [nas] group containing your Synology NAS
+
+  tasks:
+    - name: Add DNS A record for each host
+      shell: |
+        /usr/syno/bin/synoddns --add {{ item }}.isalei.tech "{{ hostvars[item].ansible_host }}"
+      args:
+        executable: /bin/bash
+      become: yes
+      loop: "{{ groups['servers'] }}"
