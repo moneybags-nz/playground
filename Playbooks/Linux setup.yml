@@ -4,60 +4,60 @@
   become: true
 
   tasks:
-    - name: Update apt cache and packages
+    - name: Update apt cache and packages # Runs apt update and apt upgrade
       apt:
         update_cache: yes
         upgrade: yes
 
-    - name: Allow unattended upgrades
+    - name: Allow unattended upgrades # Enables unattended upgrades so that your system is kept up to date
       apt:
         name: unattended-upgrades
         state: present
 
-    - name: Extend logical volume
+    - name: Extend logical volume # Extends LVM so that you use the full space available 
       community.general.lvol:
         vg: ubuntu-vg
         lv: ubuntu-lv
         size: +100%FREE
         resizefs: true
 
-#    - name: Change hostname
+#    - name: Change hostname # Only needed if you wanted to change the hostname you initially specified in the setup. This updates the hostname
 #      hostname:
 #        name: <hostname>
 
-#    - name: Update /etc/hosts file
+#    - name: Update /etc/hosts file # Only needed if you wanted to change the hostname you initially specified in the setup. This modifies the /etc/hosts file with the new hostname
 #      lineinfile:
 #        path: /etc/hosts
 #        line: "{{ ansible_default_ipv4.address }} <hostname>"
 
-    - name: Set timezone to Pacific/Auckland
+    - name: Set timezone to Pacific/Auckland # Sets the timezone to NZ Auckland
       community.general.timezone:
         name: Pacific/Auckland
 
-    - name: Install open-vm-tools
+    - name: Install open-vm-tools # Even though open-vm-tools is installed by default in newer versions of Ubuntu, I just want to make sure it's there.
       apt:
         name: open-vm-tools
         state: present
 
-    - name: Configure UFW
+    - name: Configure UFW # I disabled IPv6 rule because I don't have a IPv6 network yet.
       blockinfile:
         path: /etc/default/ufw
         block: |
           IPV6=no
 
-    - name: Enable UFW
+    - name: Enable UFW # As below
       community.general.ufw:
         state: enabled
     
-    - name: Disable UFW
+    - name: Disable UFW # Enabled and disabled to allow changes to save
       community.general.ufw:
         state: disabled
 
-    - name: Allow SSH connections
+    - name: Allow SSH connections # Standard SSH rule
       community.general.ufw:
         rule: allow
         port: ssh
 
-    - name: Enable UFW
+    - name: Enable UFW # Enables firewall
       community.general.ufw:
         state: enabled
