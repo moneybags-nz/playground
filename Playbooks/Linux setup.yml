@@ -15,23 +15,23 @@
         state: present
 
     - name: Extend logical volume
-      lvol:
+      community.general.lvol:
         vg: ubuntu-vg
         lv: ubuntu-lv
         size: +100%FREE
         resizefs: true
 
-    - name: Change hostname
-      hostname:
-        name: <hostname>
+#    - name: Change hostname
+#      hostname:
+#        name: <hostname>
 
-    - name: Update /etc/hosts file
-      lineinfile:
-        path: /etc/hosts
-        line: "{{ ansible_default_ipv4.address }} <hostname>"
+#    - name: Update /etc/hosts file
+#      lineinfile:
+#        path: /etc/hosts
+#        line: "{{ ansible_default_ipv4.address }} <hostname>"
 
     - name: Set timezone to Pacific/Auckland
-      timezone:
+      community.general.timezone:
         name: Pacific/Auckland
 
     - name: Install open-vm-tools
@@ -46,40 +46,18 @@
           IPV6=no
 
     - name: Enable UFW
-      ufw:
+      community.general.ufw:
         state: enabled
     
     - name: Disable UFW
-      ufw:
+      community.general.ufw:
         state: disabled
 
-    - name: Deny incoming connections by default
-      ufw:
-        rule: deny
-        direction: in
-
-    - name: Allow outgoing connections by default
-      ufw:
-        rule: allow
-        direction: out
-
     - name: Allow SSH connections
-      ufw:
+      community.general.ufw:
         rule: allow
         port: ssh
 
     - name: Enable UFW
-      ufw:
+      community.general.ufw:
         state: enabled
----
-- name: Update DNS A records on Synology NAS
-  hosts: nas  # Use the [nas] group containing your Synology NAS
-
-  tasks:
-    - name: Add DNS A record for each host
-      shell: |
-        /usr/syno/bin/synoddns --add {{ item }}.isalei.tech "{{ hostvars[item].ansible_host }}"
-      args:
-        executable: /bin/bash
-      become: yes
-      loop: "{{ groups['servers'] }}"
