@@ -4,13 +4,14 @@
   become: true
 
   tasks:
+
     - name: Update apt cache and packages # Runs apt update and apt upgrade
-      apt:
+      ansible.builtin.apt:
         update_cache: yes
         upgrade: yes
 
     - name: Allow unattended upgrades # Enables unattended upgrades so that your system is kept up to date
-      apt:
+      ansible.builtin.apt:
         name: unattended-upgrades
         state: present
 
@@ -22,11 +23,11 @@
         resizefs: true
 
 #    - name: Change hostname # Only needed if you wanted to change the hostname you initially specified in the setup. This updates the hostname
-#      hostname:
+#      ansible.builtin.hostname:
 #        name: <hostname>
 
 #    - name: Update /etc/hosts file # Only needed if you wanted to change the hostname you initially specified in the setup. This modifies the /etc/hosts file with the new hostname
-#      lineinfile:
+#      ansible.builtin.lineinfile:
 #        path: /etc/hosts
 #        line: "{{ ansible_default_ipv4.address }} <hostname>"
 
@@ -35,12 +36,12 @@
         name: Pacific/Auckland
 
     - name: Install open-vm-tools # Even though open-vm-tools is installed by default in newer versions of Ubuntu, I just want to make sure it's there.
-      apt:
+      ansible.builtin.apt:
         name: open-vm-tools
         state: present
 
-    - name: Configure UFW # I disabled IPv6 rule because I don't have a IPv6 network yet.
-      blockinfile:
+    - name: Configure UFW # Disabled IPv6 rule because I don't have a IPv6 network yet.
+      ansible.builtin.blockinfile:
         path: /etc/default/ufw
         block: |
           IPV6=no
@@ -61,3 +62,25 @@
     - name: Enable UFW # Enables firewall
       community.general.ufw:
         state: enabled
+    
+    - name: Install Key # Copies ssh key to remote server
+      ansible.posix.authorized_key:
+        user: master
+        state: present
+        key: "{{lookup('file','/home/moneybags/.ssh/isalei_servers.pub')}}" # Performs lookup
+
+    - name: Disable password based auth # Disables password auth for SSH since we are using an SSH key
+      ansible.builtin.lineinfile:
+        path: /etc/ssh/ssh_config
+        regexp: '^#\s*PasswordAuthentication\s+yes'
+        line: PasswordAuthentication no
+
+    - name: Disable challenge response authentication # Disables Challenge Response Authentication as we don't need it since we have disabled password authentication for SSH
+      ansible.builtin.lineinfile:
+        path: /etc/ssh/ssh_config
+        line: ChallengeResponseAuthentication no
+
+    - name: Restart SSH service # Restarts the SSH server so that our changes can take effect
+      ansible.builtin.systemd_service:
+        state: restarted
+        name: ssh
