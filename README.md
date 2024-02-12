@@ -16,7 +16,7 @@ ssh-keyscan -H ipaddress >> ~/.ssh/known_hosts
 To execute a playbook run
 
 ```
-ansible-playbook -i ~/playgound/inventory/<file> -u master -k -K <file>.yml
+ansible-playbook -i ~/playgound/inventory/<file> -u <yourusername> -k -K <file>.yml
 ```
 
 Feel free to add comments.
