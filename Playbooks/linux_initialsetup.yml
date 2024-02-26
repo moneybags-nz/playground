@@ -5,12 +5,6 @@
 
   tasks:
 
-    - name: Restart Services Automatically after install # Modifies needrestart.conf so that services automatically restart without that annoying popup
-      ansible.builtin.lineinfile:
-        path: /etc/needrestart/needrestart.conf
-        regexp: '^\#\s*\$nrconf\{restart\}\s*=\s*''i'';'  # regex to match the exact line
-        line: "$nrconf{restart} = 'a'; # restart the services automatically"
-
     - name: Update apt cache and packages # Runs apt update and apt upgrade
       ansible.builtin.apt:
         update_cache: yes
