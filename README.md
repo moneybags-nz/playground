@@ -8,6 +8,8 @@ This repo contains playbooks that I use for my home infrastructure. Feel free to
 
 Please note that if your using my `linux_initialsetup` playbook you'll need to make sure that you have added the public ssh keys of your hosts to your known_hosts file. You can do this by running the following commands (I add the IP address of the host as well just in case my internal DNS server stops working):
 
+Please ensure that you have sshpass installed as some of my playbooks require this.
+
 ```bash
 ssh-keyscan -H hostname >> ~/.ssh/known_hosts
 ssh-keyscan -H ipaddress >> ~/.ssh/known_hosts
