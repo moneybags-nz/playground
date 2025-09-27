@@ -1,0 +1,5 @@
+[linux_qemu_hosts]
+host.tld.internal
+
+[newinstalls]
+host.tld.internal

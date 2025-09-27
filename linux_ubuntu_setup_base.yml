@@ -1,0 +1,152 @@
+---
+- name: Setup and configure Ubuntu Server base
+  hosts: newinstalls
+  become: true
+  vars_files:
+    - vars/external_vars.yml
+  tasks:
+
+    - name: Restart Services Automatically after install
+      ansible.builtin.lineinfile:
+        path: /etc/needrestart/needrestart.conf
+        regexp: '^\#\s*\$nrconf\{restart\}\s*=\s*''i'';'  # modifies needrestart.conf to automatically restart
+        line: "$nrconf{restart} = 'a'; # restart the services automatically"
+
+    - name: Update apt cache and packages
+      ansible.builtin.apt:
+        update_cache: yes
+        upgrade: yes
+
+    - name: Extend logical volume
+      community.general.lvol:
+        vg: ubuntu-vg
+        lv: ubuntu-lv
+        size: +100%FREE
+        resizefs: true
+
+    - name: Set timezone to Pacific/Auckland
+      community.general.timezone:
+        name: Pacific/Auckland
+
+    - name: Install qemu agent
+      ansible.builtin.apt:
+        name: qemu-guest-agent
+        state: present
+
+    - name: Install net-tools
+      ansible.builtin.apt:
+        name: net-tools
+        state: present
+
+    # - name: Check if zabbix-agent is already installed
+    #   command: dpkg -s zabbix-agent
+    #   register: check_zabbix
+    #   changed_when: false
+    #   failed_when: false
+
+    # - name: Install Zabbix repo and agent if not installed
+    #   block:
+    #     - name: Download the Zabbix repo .deb file
+    #       ansible.builtin.get_url:
+    #         url: "{{ zabbix_repo_url }}"
+    #         dest: "/tmp/{{ zabbix_repo_deb_filename }}"
+    #         mode: '0644'
+
+    #     - name: Install the Zabbix release package (dpkg -i)
+    #       ansible.builtin.apt:
+    #         deb: "/tmp/{{ zabbix_repo_deb_filename }}"
+
+    #     - name: Remove the Zabbix .deb file
+    #       ansible.builtin.file:
+    #         path: "/tmp/{{ zabbix_repo_deb_filename }}"
+    #         state: absent
+
+    #     - name: Update apt cache
+    #       ansible.builtin.apt:
+    #         update_cache: yes
+
+    #     - name: Install Zabbix agent
+    #       ansible.builtin.apt:
+    #         name: zabbix-agent
+    #         state: present
+
+    #     - name: Enable and start zabbix-agent
+    #       ansible.builtin.service:
+    #         name: zabbix-agent
+    #         enabled: yes
+    #         state: started
+
+    #     - name: Ensure 'Server' line is updated
+    #       lineinfile:
+    #         path: /etc/zabbix/zabbix_agentd.conf
+    #         regexp: '^Server=.*'
+    #         line: "Server={{ zabbix_server }}"
+    #         backup: yes
+
+    #     - name: Ensure 'ServerActive' line is updated
+    #       lineinfile:
+    #         path: /etc/zabbix/zabbix_agentd.conf
+    #         regexp: '^ServerActive=.*'
+    #         line: "ServerActive={{ zabbix_server }}"
+    #         backup: yes
+
+    #     - name: Ensure 'Hostname' line is updated
+    #       lineinfile:
+    #         path: /etc/zabbix/zabbix_agentd.conf
+    #         regexp: '^Hostname=.*'
+    #         line: "Hostname={{ inventory_hostname }}"
+    #         backup: yes
+
+    #   when: check_zabbix.rc != 0
+
+    - name: Install Key # Copies SSH key to remote server
+      ansible.posix.authorized_key:
+        user: master
+        state: present
+        key: "{{ lookup('file', '/home/moneybags/.ssh/isalei_servers.pub') }}"
+
+    - name: Disable password-based auth
+      ansible.builtin.lineinfile:
+        path: /etc/ssh/ssh_config
+        regexp: '^#\s*PasswordAuthentication\s+yes'
+        line: 'PasswordAuthentication no'
+
+    - name: Disable challenge response authentication
+      ansible.builtin.lineinfile:
+        path: /etc/ssh/ssh_config
+        line: 'ChallengeResponseAuthentication no'
+
+    - name: Restart SSH service
+      ansible.builtin.service:
+        name: ssh
+        state: restarted
+    
+    - name: Download neofetch to /usr/local/bin
+      ansible.builtin.get_url:
+        url: "https://github.com/dylanaraps/neofetch/neofetch"
+        dest: "/usr/local/bin/neofetch"
+        mode: "0755"
+
+    - name: Change file ownership, group and permissions of neofetch
+      ansible.builtin.file:
+        path: /usr/local/bin/neofetch
+        mode: '+x'
+
+    - name: Create or update /etc/profile.d/motd.sh to run neofetch
+      ansible.builtin.blockinfile:
+        path: /etc/profile.d/motd.sh
+        block: |
+          printf "\n"
+          neofetch
+        create: true
+
+    - name: Change file ownership, group and permissions for motd.sh
+      ansible.builtin.file:
+        path: /etc/profile.d/motd.sh
+        owner: root
+        group: root
+        mode: 'u+x'
+
+    - name: Reboot
+      ansible.builtin.reboot:
+        reboot_timeout: 30

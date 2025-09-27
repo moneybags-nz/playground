@@ -1,0 +1,52 @@
+---
+- name: General Linux healthcheck
+  hosts: linux_hosts
+  become: true
+  vars:
+    user: master
+  tasks:
+
+    - name: Update apt cache and packages
+      ansible.builtin.apt:
+        update_cache: yes
+        upgrade: yes
+
+    - name: Set timezone to Pacific/Auckland
+      community.general.timezone:
+        name: Pacific/Auckland
+
+    - name: Install qemu agent
+      ansible.builtin.apt:
+        name: qemu-guest-agent
+        state: present
+
+    - name: Install net-tools
+      ansible.builtin.apt:
+        name: net-tools
+        state: present
+    
+    - name: Download neofetch to /usr/local/bin
+      ansible.builtin.get_url:
+        url: "https://github.com/dylanaraps/neofetch/neofetch"
+        dest: "/usr/local/bin/neofetch"
+        mode: "0755"
+
+    - name: Change file ownership, group and permissions of neofetch
+      ansible.builtin.file:
+        path: /usr/local/bin/neofetch
+        mode: '+x'
+
+    - name: Create or update /etc/profile.d/motd.sh to run neofetch
+      ansible.builtin.blockinfile:
+        path: /etc/profile.d/motd.sh
+        block: |
+          printf "\n"
+          neofetch
+        create: true
+
+    - name: Change file ownership, group and permissions for motd.sh
+      ansible.builtin.file:
+        path: /etc/profile.d/motd.sh
+        owner: root
+        group: root
+        mode: 'u+x'

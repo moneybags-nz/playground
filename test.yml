@@ -1,0 +1,10 @@
+---
+- name: Test variables
+  hosts: linux_qemu_hosts
+  become: true
+  vars:
+    user: master
+  gather_facts: true
+  tasks:
+    - debug: var=inventory_hostname
+    - debug: var=ansible_hostname
