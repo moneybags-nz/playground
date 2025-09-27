@@ -24,6 +24,11 @@
       ansible.builtin.apt:
         name: net-tools
         state: present
+
+    - name: Install cifs-utils
+      ansible.builtin.apt:
+        name: cifs-utils
+        state: present
     
     - name: Download neofetch to /usr/local/bin
       ansible.builtin.get_url:
