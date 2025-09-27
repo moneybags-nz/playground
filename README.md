@@ -15,10 +15,13 @@ ssh-keyscan -H hostname >> ~/.ssh/known_hosts
 ssh-keyscan -H ipaddress >> ~/.ssh/known_hosts
 ```
 
+`linux_ubuntu_setup_base.yml` - Used for configuring a fresh Ubuntu install. If you're using Zabbix then you can uncomment the lines relating to Zabbix.
+`linux_general_check.yml` - Used for configuring existing VMs.
+
 To execute a playbook run
 
 ```
-ansible-playbook -i ~/playgound/inventory/<file> -u <yourusername> -k -K <file>.yml
+ansible-playbook -i ~/playgound/inventory -u <yourusername> -k -K ~/playgound/<file>.yml
 ```
 
-Feel free to add comments.
+Feel free to comment or log a pull request if you want to make improvements.
